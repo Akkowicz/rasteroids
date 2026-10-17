@@ -27,11 +27,12 @@ Shoot large rocks into smaller rocks. Large / medium / small rocks award 20 / 50
 
 Pick an item from the [GitHub issue queue](https://github.com/Akkowicz/rasteroids/issues), reproduce it, and ask a coding agent to help investigate. Work on a branch, make one focused change, explain how you verified it, and open a pull request. Keep the dependency-free, single-page game intact unless an issue explicitly proposes otherwise.
 
-There is **one remaining intentional defect**. Held controls are released on focus loss, the static background and CRT grain are cached, new runs reset the score, and pausing freezes bullets. Instructors can search `index.html` for `LESSON` to find the remaining defect; learners can start with the issue description.
+There are **two remaining intentional defects**, including the bloom performance-regression exercise. Held controls are released on focus loss, the static background and CRT grain are cached, new runs reset the score, and pausing freezes bullets. Instructors can search `index.html` for `LESSON` to find the remaining defects; learners can start with the issue descriptions.
 
 | Tag | Intentional problem | Suggested verification |
 | --- | --- | --- |
 | [`PERF-PARTICLES` · #5](https://github.com/Akkowicz/rasteroids/issues/5) | Expired particles accumulate and are revisited forever. | Hold thrust for a minute; inspect `particles.length` in DevTools, then release and wait. |
+| `PERF-BLOOM` | An additional CPU bloom pass samples 25 neighbors for every pixel and recalculates Gaussian weights each frame, including on title and pause screens. | Compare `draw()` timings with the parent commit or profile `applyBloom`; use Git history to locate the regression. |
 
 Performance varies by browser and machine. The FPS readout is measured. The particle leak grows with play; reloading clears it.
 

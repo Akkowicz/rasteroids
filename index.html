@@ -232,6 +232,34 @@
       if (state === 'playing' && (keys.has('ArrowUp') || keys.has('KeyW'))) { ctx.fillStyle = '#cbd1bc'; ctx.fillRect(-10 - Math.floor(Math.random() * 3), -1, 5, 2); }
       ctx.restore();
     }
+    function applyBloom() {
+      // LESSON PERF-BLOOM: a new full-frame CPU glow pass worsens the baseline.
+      // Recompute the same Gaussian weights for every pixel, even dark pixels.
+      const frame = ctx.getImageData(0, 0, W, H);
+      const source = new Uint8ClampedArray(frame.data);
+      for (let y = 0; y < H; y++) {
+        for (let x = 0; x < W; x++) {
+          let glow = 0, totalWeight = 0;
+          for (let dy = -2; dy <= 2; dy++) {
+            for (let dx = -2; dx <= 2; dx++) {
+              const sx = Math.max(0, Math.min(W - 1, x + dx));
+              const sy = Math.max(0, Math.min(H - 1, y + dy));
+              const index = (sy * W + sx) * 4;
+              const weight = Math.exp(-(dx * dx + dy * dy) / 4);
+              const brightness = (source[index] + source[index + 1] + source[index + 2]) / 3;
+              glow += Math.max(0, brightness - 90) * weight;
+              totalWeight += weight;
+            }
+          }
+          const index = (y * W + x) * 4;
+          const halo = glow / totalWeight * .8;
+          frame.data[index] = source[index] + halo;
+          frame.data[index + 1] = source[index + 1] + halo;
+          frame.data[index + 2] = source[index + 2] + halo;
+        }
+      }
+      ctx.putImageData(frame, 0, 0);
+    }
     // The starfield and specks are a pure function of their index, so they never change
     // between frames. Rasterise them once into an offscreen canvas and blit that instead.
     const backdrop = document.createElement('canvas');
@@ -271,6 +299,7 @@
       ctx.fillStyle = '#e4e8d6'; for (const b of bullets) ctx.fillRect(Math.round(b.x), Math.round(b.y), 2, 2);
       drawShip();
       ctx.drawImage(grain[Math.random() * grain.length | 0], 0, 0);
+      applyBloom();
     }
     function tick(now) {
       const dt = Math.min((now - lastTime) / 1000, .05); lastTime = now; elapsed += dt;
