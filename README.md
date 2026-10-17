@@ -27,20 +27,17 @@ Shoot large rocks into smaller rocks. Large / medium / small rocks award 20 / 50
 
 Pick an item from the [GitHub issue queue](https://github.com/Akkowicz/rasteroids/issues), reproduce it, and ask a coding agent to help investigate. Work on a branch, make one focused change, explain how you verified it, and open a pull request. Keep the dependency-free, single-page game intact unless an issue explicitly proposes otherwise.
 
-There are **two remaining intentional defects**, including the bloom performance-regression exercise. Held controls are released on focus loss, the static background and CRT grain are cached, new runs reset the score, and pausing freezes bullets. Instructors can search `index.html` for `LESSON` to find the remaining defects; learners can start with the issue descriptions.
+All six original intentional defects have been fixed in the current source. Held controls are released on focus loss, the static background and CRT grain are cached, new runs reset the score, and pausing freezes bullets. Expired particles are removed in place, and bloom uses a reusable quarter-resolution canvas instead of a full-frame JavaScript pixel convolution.
 
-| Tag | Intentional problem | Suggested verification |
-| --- | --- | --- |
-| [`PERF-PARTICLES` · #5](https://github.com/Akkowicz/rasteroids/issues/5) | Expired particles accumulate and are revisited forever. | Hold thrust for a minute; inspect `particles.length` in DevTools, then release and wait. |
-| `PERF-BLOOM` | An additional CPU bloom pass samples 25 neighbors for every pixel and recalculates Gaussian weights each frame, including on title and pause screens. | Compare `draw()` timings with the parent commit or profile `applyBloom`; use Git history to locate the regression. |
+The original defects remain available in Git history for workshop exercises. The particle leak is described in [#5](https://github.com/Akkowicz/rasteroids/issues/5) and [#13](https://github.com/Akkowicz/rasteroids/issues/13); the bloom regression is described in [#16](https://github.com/Akkowicz/rasteroids/issues/16).
 
-Performance varies by browser and machine. The FPS readout is measured. The particle leak grows with play; reloading clears it.
+To verify the performance fixes, hold thrust for a minute, then release it and wait for the effects to expire: `particles.length` in DevTools should return to zero. Compare browser Performance recordings against a revision containing the original bloom regression to inspect the improvement. Performance varies by browser and machine; the FPS readout is measured.
 
 Feature requests cover [selectable colors (#6)](https://github.com/Akkowicz/rasteroids/issues/6), [sound (#7)](https://github.com/Akkowicz/rasteroids/issues/7), and [saving high scores (#8)](https://github.com/Akkowicz/rasteroids/issues/8). Those features are deliberately absent. The interface adapts to small screens, but the game currently requires a keyboard.
 
 ## Tests
 
-Run `node --test tests/focus.cjs` with Node.js to verify focus-loss input cleanup, fresh input after returning, and preserved inertia. Tests execute the game script with a minimal DOM stub and require no dependencies. Also check application and browser-tab switching in a desktop browser.
+Run `node --test tests/*.cjs` with Node.js to verify focus-loss input cleanup, fresh input after returning, preserved inertia, particle expiration, bounded effects during sustained thrust, and pause/restart behavior. Tests execute the game script with a minimal DOM stub and require no dependencies. Also check application and browser-tab switching and the bloom appearance in a desktop browser.
 
 ## Source map
 
