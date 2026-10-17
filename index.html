@@ -1,0 +1,287 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#e9e8e3">
+  <meta name="description" content="A deliberately imperfect pixel arcade. Fly, shoot, break things, then fix them on GitHub.">
+  <title>Rasteroids — Small pixels. Big problems.</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23191919'/%3E%3Cpath d='M16 5 27 27 16 22 5 27Z' fill='%23e9e8e3'/%3E%3C/svg%3E">
+  <style>
+    :root { color-scheme: light; --paper: #e9e8e3; --ink: #232421; --muted: #777972; --line: #c5c6bd; }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--paper); color: var(--ink); font-family: 'Courier New', monospace; }
+    button, a { -webkit-tap-highlight-color: transparent; }
+    button { font: inherit; cursor: pointer; }
+    button:focus-visible, a:focus-visible, canvas:focus-visible { outline: 3px solid var(--ink); outline-offset: 5px; }
+    .page { max-width: 1200px; margin: auto; padding: 25px 40px 22px; }
+    .topline { display: flex; align-items: center; justify-content: space-between; padding-bottom: 20px; border-bottom: 1px solid var(--line); font-size: 11px; letter-spacing: 1.5px; }
+    .brand { display: flex; align-items: center; gap: 10px; font-weight: bold; }
+    .brand-mark { display: grid; place-items: center; color: var(--paper); background: var(--ink); width: 25px; height: 25px; font-size: 18px; }
+    .build { display: flex; align-items: center; gap: 9px; }
+    .dot { width: 6px; height: 6px; background: currentColor; display: inline-block; }
+    .intro { display: flex; align-items: end; justify-content: space-between; gap: 20px; padding: 31px 0 27px; }
+    .eyebrow { font-size: 10px; letter-spacing: 2px; margin: 0 0 10px; color: var(--muted); }
+    h1 { font-size: clamp(34px, 5.3vw, 65px); line-height: 1; letter-spacing: -4px; margin: 0; font-weight: 900; }
+    .intro-copy { text-align: right; font-size: 12px; line-height: 1.7; margin: 0 0 2px; }
+    .machine { border: 1px solid var(--ink); background: #141612; box-shadow: 5px 5px 0 #d2d3ca; }
+    .telemetry { color: #e5e7db; background: #1c1e19; display: flex; align-items: center; justify-content: space-between; padding: 15px 23px; border-bottom: 1px solid #3e4138; gap: 12px; }
+    .stats { display: flex; gap: 44px; }
+    .stat small { display: block; font-size: 9px; letter-spacing: 1.6px; color: #979c8d; margin-bottom: 5px; }
+    .stat strong { font-size: 21px; font-weight: normal; letter-spacing: 2px; font-variant-numeric: tabular-nums; }
+    .machine-buttons { display: flex; align-items: center; gap: 8px; }
+    .machine-buttons button { background: transparent; border: 1px solid #55594e; padding: 9px 12px; color: #cdd0c2; font-size: 10px; letter-spacing: 1px; }
+    .machine-buttons button:hover { background: #36392e; }
+    .machine-buttons button:disabled { opacity: .35; cursor: default; }
+    .machine-buttons button:focus-visible { outline-color: #e5e7db; }
+    .viewport { position: relative; overflow: hidden; aspect-ratio: 8 / 5; background: #10120e; }
+    canvas { display: block; width: 100%; height: 100%; image-rendering: pixelated; image-rendering: crisp-edges; }
+    .scanlines { position: absolute; inset: 0; pointer-events: none; background: repeating-linear-gradient(transparent 0 3px, #00000018 3px 4px); }
+    .overlay { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #e4e7da; text-align: center; background: #10120e90; padding: 20px; }
+    .overlay[hidden] { display: none; }
+    .overlay .overline { font-size: 10px; letter-spacing: 4px; margin: 0 0 20px; color: #a8ad9d; }
+    .overlay h2 { font-size: clamp(27px, 5vw, 54px); letter-spacing: 2px; margin: 0 0 15px; text-shadow: 3px 3px #55594c; }
+    .overlay .description { font-size: 12px; line-height: 1.9; color: #b2b8a5; margin: 0 0 27px; }
+    .launch { background: #e4e7da; color: #171a12; border: 0; padding: 15px 27px; box-shadow: 4px 4px #55594c; font-weight: bold; letter-spacing: 2px; font-size: 12px; }
+    .launch:hover { background: #fff; transform: translateY(-1px); }
+    .overlay .hint { font-size: 9px; letter-spacing: 1.5px; color: #8f9681; margin: 19px 0 0; }
+    .bottom-rail { display: flex; justify-content: space-between; align-items: center; padding: 11px 20px; color: #969d88; background: #1c1e19; border-top: 1px solid #3e4138; font-size: 9px; letter-spacing: 1px; gap: 10px; }
+    .live { display: inline-flex; align-items: center; gap: 7px; }
+    .controls { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 20px; padding: 27px 0; border-bottom: 1px solid var(--line); }
+    .control { display: flex; align-items: center; gap: 12px; }
+    .keys { display: flex; gap: 4px; }
+    kbd { min-width: 29px; height: 29px; display: inline-grid; place-items: center; padding: 0 7px; border: 1px solid #a8aaa0; border-bottom-width: 3px; border-radius: 3px; font: 12px 'Courier New', monospace; background: #efefe9; }
+    .control strong { display: block; font-size: 11px; margin-bottom: 4px; }
+    .control small { display: block; font-size: 9px; color: var(--muted); }
+    footer { display: flex; justify-content: space-between; gap: 20px; padding-top: 20px; font-size: 10px; line-height: 1.8; color: var(--muted); }
+    footer p { margin: 0; }
+    footer a { color: var(--ink); text-decoration: none; border-bottom: 1px solid #a8aaa0; }
+    footer a:hover { border-color: var(--ink); }
+    @media (max-width: 700px) {
+      .page { padding: 18px 17px; } .topline { font-size: 9px; letter-spacing: .6px; } .intro { padding: 25px 0; align-items: start; flex-direction: column; gap: 13px; } .intro-copy { text-align: left; font-size: 11px; } h1 { letter-spacing: -2px; } .telemetry { padding: 12px; } .stats { gap: 18px; } .stat strong { font-size: 16px; } .stat small { font-size: 8px; } .machine-buttons button { padding: 8px; font-size: 9px; } .restart-label { display: none; } .controls { grid-template-columns: 1fr 1fr; gap: 22px; } .overlay .overline { margin-bottom: 12px; font-size: 8px; } .overlay h2 { margin-bottom: 8px; } .overlay .description { font-size: 10px; margin-bottom: 15px; } .launch { padding: 12px 18px; font-size: 10px; } .overlay .hint { font-size: 8px; margin-top: 13px; } .bottom-rail { padding: 10px; font-size: 8px; letter-spacing: 0; } footer { flex-direction: column; gap: 8px; }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <header class="topline">
+      <div class="brand"><span class="brand-mark" aria-hidden="true">R</span> INDEPENDENT ORBITAL ARCADE</div>
+      <span class="build"><span class="dot"></span> TRAINING BUILD / V.0.1</span>
+    </header>
+    <section class="intro" aria-labelledby="title">
+      <div><p class="eyebrow">INSERT CURIOSITY. PRESS START.</p><h1 id="title">RASTEROIDS</h1></div>
+      <p class="intro-copy">Small pixels. Big problems.<br>A beautifully broken little space game.</p>
+    </section>
+    <section class="machine" aria-label="Rasteroids arcade game">
+      <div class="telemetry">
+        <div class="stats">
+          <div class="stat"><small>SCORE</small><strong id="score">000000</strong></div>
+          <div class="stat"><small>SECTOR</small><strong id="sector">01</strong></div>
+          <div class="stat"><small>SHIPS</small><strong id="lives" aria-label="3 ships">△ △ △</strong></div>
+        </div>
+        <div class="machine-buttons">
+          <button id="pause" type="button" disabled aria-label="Pause game">Ⅱ <span class="restart-label">PAUSE</span></button>
+          <button id="restart" type="button" aria-label="Restart game">↻ <span class="restart-label">RESTART</span></button>
+        </div>
+      </div>
+      <div class="viewport">
+        <canvas id="game" width="480" height="300" tabindex="0" aria-label="Asteroids playfield. Use left and right arrows to rotate, up to thrust, Space to fire, P to pause, and R to restart.">This game requires a browser with HTML canvas and JavaScript enabled.</canvas>
+        <div class="scanlines" aria-hidden="true"></div>
+        <div class="overlay" id="overlay">
+          <p class="overline" id="overline">480 × 300 / ALL SYSTEMS QUESTIONABLE</p>
+          <h2 id="overlay-title">READY, PILOT?</h2>
+          <p class="description" id="overlay-description">Clear the rocks. Keep your ship.<br>Try not to become space dust.</p>
+          <button class="launch" id="launch" type="button">LAUNCH GAME →</button>
+          <p class="hint" id="overlay-hint">OR PRESS ENTER · KEYBOARD REQUIRED</p>
+        </div>
+      </div>
+      <div class="bottom-rail"><span class="live"><span class="dot"></span><span id="status" role="status">AWAITING PILOT</span></span><span><span id="fps">--</span> FPS · 480 × 300 · MONO</span><span>BEST <span id="best">000000</span></span></div>
+    </section>
+    <section class="controls" aria-label="Keyboard controls">
+      <div class="control"><span class="keys"><kbd>←</kbd><kbd>→</kbd></span><div><strong>ROTATE</strong><small>Find your heading</small></div></div>
+      <div class="control"><kbd>↑</kbd><div><strong>THRUST</strong><small>A little momentum</small></div></div>
+      <div class="control"><kbd>SPACE</kbd><div><strong>FIRE</strong><small>Make smaller rocks</small></div></div>
+      <div class="control"><kbd>P</kbd><div><strong>PAUSE</strong><small>Take a breather</small></div></div>
+    </section>
+    <footer><p>BUILT TO PLAY. BROKEN TO LEARN.<br>An intentionally imperfect playground for GitHub & coding agents.</p><p><a href="https://github.com/Akkowicz/rasteroids/issues" target="_blank" rel="noopener noreferrer">EXPLORE THE ISSUE QUEUE ↗</a><br>NO INSTALLS. NO DEPENDENCIES. JUST PIXELS.</p></footer>
+  </main>
+  <script>
+    'use strict';
+    // Workshop baseline: deliberate defects use LESSON tags. See README.md.
+    const canvas = document.getElementById('game');
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
+    ctx.imageSmoothingEnabled = false;
+    const W = canvas.width, H = canvas.height;
+    const ui = Object.fromEntries(['score', 'sector', 'lives', 'pause', 'restart', 'overlay', 'overline', 'overlay-title', 'overlay-description', 'overlay-hint', 'launch', 'status', 'fps', 'best'].map(id => [id, document.getElementById(id)]));
+    const keys = new Set();
+    const random = (min, max) => min + Math.random() * (max - min);
+    const wrap = (n, size) => (n % size + size) % size;
+    const distance = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
+    let state = 'ready', score = 0, best = 0, sector = 1, lives = 3;
+    let ship, asteroids = [], bullets = [], particles = [], cooldown = 0, waveDelay = 0;
+    let lastTime = performance.now(), fpsTime = lastTime, frames = 0, elapsed = 0;
+
+    function resetShip() {
+      ship = { x: W / 2, y: H / 2, vx: 0, vy: 0, angle: -Math.PI / 2, invincible: 2.5 };
+    }
+    function makeAsteroid(x, y, size) {
+      const radius = [0, 7, 13, 23][size];
+      const heading = random(0, Math.PI * 2), speed = random(8, 18) + sector * 2 + (3 - size) * 8;
+      return { x, y, size, radius, vx: Math.cos(heading) * speed, vy: Math.sin(heading) * speed, angle: random(0, 6.28), spin: random(-.5, .5), shape: Array.from({ length: 11 }, () => random(.65, 1)) };
+    }
+    function spawnWave() {
+      for (let i = 0; i < Math.min(4 + sector, 12); i++) {
+        let x, y;
+        do { x = random(0, W); y = random(0, H); } while (Math.hypot(x - W / 2, y - H / 2) < 90);
+        asteroids.push(makeAsteroid(x, y, 3));
+      }
+    }
+    function updateHUD() {
+      ui.score.textContent = String(score).padStart(6, '0');
+      ui.sector.textContent = String(sector).padStart(2, '0');
+      ui.lives.textContent = lives > 0 ? Array(lives).fill('△').join(' ') : '—';
+      ui.lives.setAttribute('aria-label', `${lives} ships`);
+      ui.best.textContent = String(best).padStart(6, '0');
+    }
+    function showOverlay(title, description, button, overline, hint) {
+      ui['overlay-title'].textContent = title; ui['overlay-description'].textContent = description;
+      ui.launch.textContent = button; ui.overline.textContent = overline;
+      ui['overlay-hint'].textContent = hint; ui.overlay.hidden = false;
+    }
+    function startGame() {
+      // LESSON BUG-RESTART: score is accidentally kept from the previous run.
+      sector = 1; lives = 3; asteroids = []; bullets = []; particles = [];
+      cooldown = 0; waveDelay = 0; keys.clear(); resetShip(); spawnWave();
+      state = 'playing'; ui.overlay.hidden = true; ui.pause.disabled = false;
+      ui.pause.innerHTML = 'Ⅱ <span class="restart-label">PAUSE</span>';
+      ui.pause.setAttribute('aria-label', 'Pause game');
+      ui.status.textContent = 'FLIGHT IN PROGRESS'; updateHUD(); canvas.focus();
+    }
+    function togglePause() {
+      if (state !== 'playing' && state !== 'paused') return;
+      state = state === 'playing' ? 'paused' : 'playing'; keys.clear();
+      ui.pause.innerHTML = state === 'paused' ? '▶ <span class="restart-label">RESUME</span>' : 'Ⅱ <span class="restart-label">PAUSE</span>';
+      ui.pause.setAttribute('aria-label', state === 'paused' ? 'Resume game' : 'Pause game');
+      ui.status.textContent = state === 'paused' ? 'FLIGHT PAUSED' : 'FLIGHT IN PROGRESS';
+      if (state === 'paused') showOverlay('HOLDING ORBIT', 'One small break for a pilot.', 'RESUME FLIGHT →', 'PAUSED / TAKE YOUR TIME', 'PRESS P OR ENTER TO RESUME');
+      else { ui.overlay.hidden = true; canvas.focus(); }
+    }
+    function burst(x, y, count) {
+      for (let i = 0; i < count; i++) {
+        const angle = random(0, Math.PI * 2), speed = random(8, 65);
+        particles.push({ x, y, vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed, life: random(.2, .9), shade: Math.floor(random(90, 215)) });
+      }
+    }
+    function fire() {
+      bullets.push({ x: wrap(ship.x + Math.cos(ship.angle) * 9, W), y: wrap(ship.y + Math.sin(ship.angle) * 9, H), vx: Math.cos(ship.angle) * 190 + ship.vx, vy: Math.sin(ship.angle) * 190 + ship.vy, life: 1.25 });
+      cooldown = .16;
+    }
+    function updateBullets(dt) {
+      for (const b of bullets) { b.x = wrap(b.x + b.vx * dt, W); b.y = wrap(b.y + b.vy * dt, H); b.life -= dt; }
+      bullets = bullets.filter(b => b.life > 0);
+    }
+    function update(dt) {
+      // LESSON BUG-PAUSE: projectiles advance even while the game is paused.
+      if (state === 'playing' || state === 'paused') updateBullets(dt);
+      if (state !== 'playing') return;
+      ship.invincible -= dt; cooldown -= dt;
+      if (keys.has('ArrowLeft') || keys.has('KeyA')) ship.angle -= 3.7 * dt;
+      if (keys.has('ArrowRight') || keys.has('KeyD')) ship.angle += 3.7 * dt;
+      if (keys.has('ArrowUp') || keys.has('KeyW')) {
+        ship.vx += Math.cos(ship.angle) * 75 * dt; ship.vy += Math.sin(ship.angle) * 75 * dt;
+        burst(ship.x - Math.cos(ship.angle) * 7, ship.y - Math.sin(ship.angle) * 7, 2);
+      }
+      const speed = Math.hypot(ship.vx, ship.vy);
+      if (speed > 115) { ship.vx *= 115 / speed; ship.vy *= 115 / speed; }
+      ship.vx *= Math.pow(.99, dt * 60); ship.vy *= Math.pow(.99, dt * 60);
+      ship.x = wrap(ship.x + ship.vx * dt, W); ship.y = wrap(ship.y + ship.vy * dt, H);
+      if (keys.has('Space') && cooldown <= 0) fire();
+      for (const a of asteroids) { a.x = wrap(a.x + a.vx * dt, W); a.y = wrap(a.y + a.vy * dt, H); a.angle += a.spin * dt; }
+      for (let i = bullets.length - 1; i >= 0; i--) {
+        const b = bullets[i], index = asteroids.findIndex(a => distance(a, b) < a.radius);
+        if (index < 0) continue;
+        const a = asteroids.splice(index, 1)[0]; bullets.splice(i, 1);
+        score += [0, 100, 50, 20][a.size]; best = Math.max(best, score); burst(a.x, a.y, 22);
+        if (a.size > 1) asteroids.push(makeAsteroid(a.x - 3, a.y, a.size - 1), makeAsteroid(a.x + 3, a.y, a.size - 1));
+        updateHUD();
+      }
+      if (ship.invincible <= 0 && asteroids.some(a => distance(a, ship) < a.radius + 4)) {
+        burst(ship.x, ship.y, 65); lives--; updateHUD();
+        if (lives <= 0) {
+          state = 'over'; ui.pause.disabled = true; keys.clear(); ui.status.textContent = 'SIGNAL LOST';
+          showOverlay('SPACE DUST.', `Final score: ${String(score).padStart(6, '0')} · Sector ${sector}`, 'TRY AGAIN →', 'MISSION ENDED / NICE FLYING, MOSTLY', 'PRESS ENTER TO FLY AGAIN');
+        } else resetShip();
+      }
+      if (asteroids.length === 0) { waveDelay += dt; if (waveDelay > 1.2) { sector++; waveDelay = 0; spawnWave(); updateHUD(); } }
+      // LESSON PERF-PARTICLES: expired particles are never removed or reused.
+      for (const p of particles) { p.x += p.vx * dt; p.y += p.vy * dt; p.life -= dt; }
+    }
+    function drawAsteroid(a) {
+      ctx.strokeStyle = '#9ca48d'; ctx.lineWidth = 1; ctx.beginPath();
+      a.shape.forEach((r, i) => {
+        const angle = a.angle + i / a.shape.length * Math.PI * 2;
+        const x = Math.round(a.x + Math.cos(angle) * a.radius * r) + .5, y = Math.round(a.y + Math.sin(angle) * a.radius * r) + .5;
+        if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+      });
+      ctx.closePath(); ctx.stroke(); ctx.fillStyle = '#505747';
+      ctx.fillRect(Math.round(a.x - a.radius / 3), Math.round(a.y - a.radius / 4), 2, 2);
+    }
+    function drawShip() {
+      if (state === 'over' || (ship.invincible > 0 && Math.floor(elapsed * 9) % 2 === 0 && state !== 'ready')) return;
+      ctx.save(); ctx.translate(Math.round(ship.x), Math.round(ship.y)); ctx.rotate(ship.angle);
+      ctx.strokeStyle = '#e4e8d6'; ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(8, 0); ctx.lineTo(-6, -5); ctx.lineTo(-3, 0); ctx.lineTo(-6, 5); ctx.closePath(); ctx.stroke();
+      if (state === 'playing' && (keys.has('ArrowUp') || keys.has('KeyW'))) { ctx.fillStyle = '#cbd1bc'; ctx.fillRect(-10 - Math.floor(Math.random() * 3), -1, 5, 2); }
+      ctx.restore();
+    }
+    function draw() {
+      ctx.fillStyle = '#10120e'; ctx.fillRect(0, 0, W, H);
+      // LESSON PERF-BACKGROUND: rebuild, sort, and draw static scenery every frame.
+      // This does actual redundant work; there is no artificial sleep or busy wait.
+      const stars = Array.from({ length: 48000 }, (_, i) => ({ x: (i * 7919) % W, y: (i * 6271 + Math.floor(i / W) * 13) % H, shade: 19 + (i % 14) }));
+      stars.sort((a, b) => a.shade - b.shade);
+      for (const star of stars) { ctx.fillStyle = `rgb(${star.shade},${star.shade + 2},${star.shade - 2})`; ctx.fillRect(star.x, star.y, 1, 1); }
+      ctx.fillStyle = '#68715a';
+      for (let i = 0; i < 65; i++) ctx.fillRect((i * 137 + 23) % W, (i * 89 + 7) % H, 1, 1);
+      for (const a of asteroids) drawAsteroid(a);
+      for (const p of particles) {
+        // Creating a color for dead particles still costs work, even though they aren't visible.
+        ctx.fillStyle = `rgb(${p.shade},${p.shade},${p.shade})`;
+        if (p.life > 0) ctx.fillRect(Math.round(p.x), Math.round(p.y), 1, 1);
+      }
+      ctx.fillStyle = '#e4e8d6'; for (const b of bullets) ctx.fillRect(Math.round(b.x), Math.round(b.y), 2, 2);
+      drawShip();
+      // A full framebuffer read/write makes the CRT grain disproportionately expensive.
+      const frame = ctx.getImageData(0, 0, W, H);
+      for (let i = 0; i < frame.data.length; i += 4) {
+        const noise = Math.random() > .5 ? 2 : -2;
+        frame.data[i] += noise; frame.data[i + 1] += noise; frame.data[i + 2] += noise;
+      }
+      ctx.putImageData(frame, 0, 0);
+    }
+    function tick(now) {
+      const dt = Math.min((now - lastTime) / 1000, .05); lastTime = now; elapsed += dt;
+      if (state === 'ready') for (const a of asteroids) { a.x = wrap(a.x + a.vx * dt * .3, W); a.angle += a.spin * dt; }
+      update(dt); draw(); frames++;
+      if (now - fpsTime >= 1000) { ui.fps.textContent = Math.round(frames * 1000 / (now - fpsTime)); frames = 0; fpsTime = now; }
+      requestAnimationFrame(tick);
+    }
+    const gameKeys = ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'Space', 'KeyA', 'KeyD', 'KeyW', 'KeyP', 'KeyR', 'Enter'];
+    window.addEventListener('keydown', event => {
+      if (!gameKeys.includes(event.code) || event.altKey || event.ctrlKey || event.metaKey) return;
+      if (event.target instanceof HTMLButtonElement && (event.code === 'Enter' || event.code === 'Space')) return;
+      event.preventDefault();
+      if (event.code === 'KeyP' && !event.repeat) togglePause();
+      else if (event.code === 'KeyR' && !event.repeat) startGame();
+      else if (event.code === 'Enter' && !event.repeat) { if (state === 'paused') togglePause(); else if (state === 'ready' || state === 'over') startGame(); }
+      else keys.add(event.code);
+    });
+    window.addEventListener('keyup', event => keys.delete(event.code));
+    // LESSON BUG-FOCUS: missing blur/visibility cleanup can leave a key stuck down.
+    ui.launch.addEventListener('click', () => state === 'paused' ? togglePause() : startGame());
+    ui.pause.addEventListener('click', togglePause);
+    ui.restart.addEventListener('click', startGame);
+    resetShip(); spawnWave(); requestAnimationFrame(tick);
+  </script>
+</body>
+</html>
