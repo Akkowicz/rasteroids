@@ -27,16 +27,15 @@ Shoot large rocks into smaller rocks. Large / medium / small rocks award 20 / 50
 
 Pick an item from the [GitHub issue queue](https://github.com/Akkowicz/rasteroids/issues), reproduce it, and ask a coding agent to help investigate. Work on a branch, make one focused change, explain how you verified it, and open a pull request. Keep the dependency-free, single-page game intact unless an issue explicitly proposes otherwise.
 
-There are **four remaining intentional defects**. Held controls are now released on window blur and when the page becomes hidden. Instructors can search `index.html` for `LESSON` to find the remaining defects; learners can start with just the issue descriptions.
+There are **three remaining intentional defects**. Held controls are now released on window blur and when the page becomes hidden, and the static background and CRT grain are cached. Instructors can search `index.html` for `LESSON` to find the remaining defects; learners can start with just the issue descriptions.
 
 | Tag | Intentional problem | Suggested verification |
 | --- | --- | --- |
 | [`BUG-RESTART` · #1](https://github.com/Akkowicz/rasteroids/issues/1) | Restart and retry keep the previous score. | Score a hit, restart, check for zero. |
 | [`BUG-PAUSE` · #2](https://github.com/Akkowicz/rasteroids/issues/2) | Bullets keep moving and expire while paused. | Fire, pause immediately, wait, resume. |
-| [`PERF-BACKGROUND` · #4](https://github.com/Akkowicz/rasteroids/issues/4) | Every frame allocates and sorts 48,000 stars and processes the full framebuffer. | Record a browser Performance profile; compare before/after on the same hardware. |
 | [`PERF-PARTICLES` · #5](https://github.com/Akkowicz/rasteroids/issues/5) | Expired particles accumulate and are revisited forever. | Hold thrust for a minute; inspect `particles.length` in DevTools, then release and wait. |
 
-Performance varies by browser and machine. The starfield and grain perform real redundant work rather than adding an artificial delay. The FPS readout is measured. The particle leak grows with play; reloading clears it.
+Performance varies by browser and machine. The FPS readout is measured. The particle leak grows with play; reloading clears it.
 
 Feature requests cover [selectable colors (#6)](https://github.com/Akkowicz/rasteroids/issues/6), [sound (#7)](https://github.com/Akkowicz/rasteroids/issues/7), and [saving high scores (#8)](https://github.com/Akkowicz/rasteroids/issues/8). Those features are deliberately absent. The interface adapts to small screens, but the game currently requires a keyboard.
 
