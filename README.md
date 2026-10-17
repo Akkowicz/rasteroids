@@ -27,12 +27,10 @@ Shoot large rocks into smaller rocks. Large / medium / small rocks award 20 / 50
 
 Pick an item from the [GitHub issue queue](https://github.com/Akkowicz/rasteroids/issues), reproduce it, and ask a coding agent to help investigate. Work on a branch, make one focused change, explain how you verified it, and open a pull request. Keep the dependency-free, single-page game intact unless an issue explicitly proposes otherwise.
 
-There are **three remaining intentional defects**. Held controls are now released on window blur and when the page becomes hidden, and the static background and CRT grain are cached. Instructors can search `index.html` for `LESSON` to find the remaining defects; learners can start with just the issue descriptions.
+There is **one remaining intentional defect**. Held controls are released on focus loss, the static background and CRT grain are cached, new runs reset the score, and pausing freezes bullets. Instructors can search `index.html` for `LESSON` to find the remaining defect; learners can start with the issue description.
 
 | Tag | Intentional problem | Suggested verification |
 | --- | --- | --- |
-| [`BUG-RESTART` · #1](https://github.com/Akkowicz/rasteroids/issues/1) | Restart and retry keep the previous score. | Score a hit, restart, check for zero. |
-| [`BUG-PAUSE` · #2](https://github.com/Akkowicz/rasteroids/issues/2) | Bullets keep moving and expire while paused. | Fire, pause immediately, wait, resume. |
 | [`PERF-PARTICLES` · #5](https://github.com/Akkowicz/rasteroids/issues/5) | Expired particles accumulate and are revisited forever. | Hold thrust for a minute; inspect `particles.length` in DevTools, then release and wait. |
 
 Performance varies by browser and machine. The FPS readout is measured. The particle leak grows with play; reloading clears it.

@@ -149,8 +149,7 @@
       ui['overlay-hint'].textContent = hint; ui.overlay.hidden = false;
     }
     function startGame() {
-      // LESSON BUG-RESTART: score is accidentally kept from the previous run.
-      sector = 1; lives = 3; asteroids = []; bullets = []; particles = [];
+      score = 0; sector = 1; lives = 3; asteroids = []; bullets = []; particles = [];
       cooldown = 0; waveDelay = 0; keys.clear(); resetShip(); spawnWave();
       state = 'playing'; ui.overlay.hidden = true; ui.pause.disabled = false;
       ui.pause.innerHTML = 'Ⅱ <span class="restart-label">PAUSE</span>';
@@ -181,9 +180,8 @@
       bullets = bullets.filter(b => b.life > 0);
     }
     function update(dt) {
-      // LESSON BUG-PAUSE: projectiles advance even while the game is paused.
-      if (state === 'playing' || state === 'paused') updateBullets(dt);
       if (state !== 'playing') return;
+      updateBullets(dt);
       ship.invincible -= dt; cooldown -= dt;
       if (keys.has('ArrowLeft') || keys.has('KeyA')) ship.angle -= 3.7 * dt;
       if (keys.has('ArrowRight') || keys.has('KeyD')) ship.angle += 3.7 * dt;
