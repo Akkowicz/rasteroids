@@ -277,7 +277,10 @@
       else keys.add(event.code);
     });
     window.addEventListener('keyup', event => keys.delete(event.code));
-    // LESSON BUG-FOCUS: missing blur/visibility cleanup can leave a key stuck down.
+    window.addEventListener('blur', () => keys.clear());
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) keys.clear();
+    });
     ui.launch.addEventListener('click', () => state === 'paused' ? togglePause() : startGame());
     ui.pause.addEventListener('click', togglePause);
     ui.restart.addEventListener('click', startGame);
