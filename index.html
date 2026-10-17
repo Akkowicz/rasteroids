@@ -109,7 +109,7 @@
     'use strict';
     // Workshop baseline: deliberate defects use LESSON tags. See README.md.
     const canvas = document.getElementById('game');
-    const ctx = canvas.getContext('2d', { willReadFrequently: true });
+    const ctx = canvas.getContext('2d');
     ctx.imageSmoothingEnabled = false;
     const W = canvas.width, H = canvas.height;
     const ui = Object.fromEntries(['score', 'sector', 'lives', 'pause', 'restart', 'overlay', 'overline', 'overlay-title', 'overlay-description', 'overlay-hint', 'launch', 'status', 'fps', 'best'].map(id => [id, document.getElementById(id)]));
@@ -234,15 +234,36 @@
       if (state === 'playing' && (keys.has('ArrowUp') || keys.has('KeyW'))) { ctx.fillStyle = '#cbd1bc'; ctx.fillRect(-10 - Math.floor(Math.random() * 3), -1, 5, 2); }
       ctx.restore();
     }
-    function draw() {
-      ctx.fillStyle = '#10120e'; ctx.fillRect(0, 0, W, H);
-      // LESSON PERF-BACKGROUND: rebuild, sort, and draw static scenery every frame.
-      // This does actual redundant work; there is no artificial sleep or busy wait.
+    // The starfield and specks are a pure function of their index, so they never change
+    // between frames. Rasterise them once into an offscreen canvas and blit that instead.
+    const backdrop = document.createElement('canvas');
+    backdrop.width = W; backdrop.height = H;
+    function buildBackdrop() {
+      const bg = backdrop.getContext('2d');
+      bg.fillStyle = '#10120e'; bg.fillRect(0, 0, W, H);
       const stars = Array.from({ length: 48000 }, (_, i) => ({ x: (i * 7919) % W, y: (i * 6271 + Math.floor(i / W) * 13) % H, shade: 19 + (i % 14) }));
       stars.sort((a, b) => a.shade - b.shade);
-      for (const star of stars) { ctx.fillStyle = `rgb(${star.shade},${star.shade + 2},${star.shade - 2})`; ctx.fillRect(star.x, star.y, 1, 1); }
-      ctx.fillStyle = '#68715a';
-      for (let i = 0; i < 65; i++) ctx.fillRect((i * 137 + 23) % W, (i * 89 + 7) % H, 1, 1);
+      for (const star of stars) { bg.fillStyle = `rgb(${star.shade},${star.shade + 2},${star.shade - 2})`; bg.fillRect(star.x, star.y, 1, 1); }
+      bg.fillStyle = '#68715a';
+      for (let i = 0; i < 65; i++) bg.fillRect((i * 137 + 23) % W, (i * 89 + 7) % H, 1, 1);
+    }
+    // Grain only has to look random, not be fresh every frame. Bake a handful of overlays
+    // once and pick one per frame, so the CRT shimmer costs a single composite.
+    const grain = [];
+    function buildGrain() {
+      for (let layer = 0; layer < 8; layer++) {
+        const sheet = document.createElement('canvas');
+        sheet.width = W; sheet.height = H;
+        const sc = sheet.getContext('2d'), speckles = sc.createImageData(W, H), d = speckles.data;
+        for (let i = 0; i < d.length; i += 4) {
+          d[i] = d[i + 1] = d[i + 2] = Math.random() > .5 ? 255 : 0;
+          d[i + 3] = 4;
+        }
+        sc.putImageData(speckles, 0, 0); grain.push(sheet);
+      }
+    }
+    function draw() {
+      ctx.drawImage(backdrop, 0, 0);
       for (const a of asteroids) drawAsteroid(a);
       for (const p of particles) {
         // Creating a color for dead particles still costs work, even though they aren't visible.
@@ -251,13 +272,7 @@
       }
       ctx.fillStyle = '#e4e8d6'; for (const b of bullets) ctx.fillRect(Math.round(b.x), Math.round(b.y), 2, 2);
       drawShip();
-      // A full framebuffer read/write makes the CRT grain disproportionately expensive.
-      const frame = ctx.getImageData(0, 0, W, H);
-      for (let i = 0; i < frame.data.length; i += 4) {
-        const noise = Math.random() > .5 ? 2 : -2;
-        frame.data[i] += noise; frame.data[i + 1] += noise; frame.data[i + 2] += noise;
-      }
-      ctx.putImageData(frame, 0, 0);
+      ctx.drawImage(grain[Math.random() * grain.length | 0], 0, 0);
     }
     function tick(now) {
       const dt = Math.min((now - lastTime) / 1000, .05); lastTime = now; elapsed += dt;
@@ -284,7 +299,7 @@
     ui.launch.addEventListener('click', () => state === 'paused' ? togglePause() : startGame());
     ui.pause.addEventListener('click', togglePause);
     ui.restart.addEventListener('click', startGame);
-    resetShip(); spawnWave(); requestAnimationFrame(tick);
+    buildBackdrop(); buildGrain(); resetShip(); spawnWave(); requestAnimationFrame(tick);
   </script>
 </body>
 </html>

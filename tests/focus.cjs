@@ -8,6 +8,17 @@ function game() {
   const windowEvents = {}, documentEvents = {};
   const document = {
     hidden: false,
+    createElement(name) {
+      assert.equal(name, 'canvas');
+      return {
+        width: 0, height: 0,
+        getContext: () => ({
+          fillRect() {},
+          createImageData: (width, height) => ({ data: new Uint8ClampedArray(width * height * 4) }),
+          putImageData() {},
+        }),
+      };
+    },
     addEventListener(name, handler) { documentEvents[name] = handler; },
     getElementById: () => ({
       width: 480, height: 300, getContext: () => ({}),
